@@ -3,8 +3,15 @@ import re
 from google import genai
 from app.config import GEMINI_API_KEY, GEMINI_MODEL
 from app.services.law_cache_service import load_space_a_laws
+from app.services.llm_client import LLMClient
 
-client = genai.Client(api_key=GEMINI_API_KEY)
+llm_client = LLMClient(
+    api_key=GEMINI_API_KEY,
+    models=[
+        GEMINI_MODEL,
+        "gemini-2.5-flash-lite",
+    ],
+)
 
 def analyze_contract_clauses(clauses: list[str], language: str = "zh-TW") -> list[dict]:
     space_a_laws = load_space_a_laws()
@@ -49,12 +56,9 @@ SPACE A 法規知識庫：
 """
 
 
-    response = client.models.generate_content(
-        model=GEMINI_MODEL,
-        contents=prompt
-    )
+    response_text = llm_client.generate(prompt)
 
-    return parse_json_response(response.text)
+    return parse_json_response(response_text)
 
 def parse_json_response(text: str) -> list[dict]:
     text = text.strip()

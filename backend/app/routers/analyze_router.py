@@ -2,8 +2,11 @@ from fastapi import APIRouter, UploadFile, File, Form
 from app.services.gemini_ocr_service import extract_text_from_file
 from app.services.clause_service import split_clauses
 from app.services.gemini_analysis_service import analyze_contract_clauses
+from app.services.suspicious_checker_service import check_suspicious_terms
+from app.services.result_merger_service import merge_analysis_results
 
 router = APIRouter()
+
 
 @router.post("/analyze")
 async def analyze_contract(
@@ -16,7 +19,14 @@ async def analyze_contract(
 
     clauses = split_clauses(ocr_text)
 
-    results = analyze_contract_clauses(clauses, language)
+    suspicious_results = check_suspicious_terms(clauses)
+
+    ai_results = analyze_contract_clauses(clauses, language)
+
+    results = merge_analysis_results(
+        suspicious_results,
+        ai_results
+    )
 
     return {
         "ocr_text": ocr_text,
