@@ -20,7 +20,6 @@ class LLMClient:
             "gemini-3-flash-preview",
             "gemini-2.5-flash",
             "gemini-2.5-flash-lite",
-
         ]
 
         self.retry_delays = [2, 4, 8][:max_retries]
@@ -31,16 +30,18 @@ class LLMClient:
         self.last_fail_time = 0
         self.state = "CLOSED"
 
+    # =========================
+    # Circuit Breaker
+    # =========================
+
     def _is_available(self) -> bool:
         if self.state == "OPEN":
             elapsed = time.time() - self.last_fail_time
 
             if elapsed > self.cooldown_seconds:
-                print("熔斷器進入 HALF_OPEN，嘗試恢復")
                 self.state = "HALF_OPEN"
                 return True
 
-            print("熔斷器 OPEN，暫停請求")
             return False
 
         return True
@@ -54,21 +55,36 @@ class LLMClient:
         self.last_fail_time = time.time()
 
         if self.fail_count >= self.failure_threshold:
-            print("熔斷器觸發 OPEN")
             self.state = "OPEN"
 
-    def _generate_with_retry(self, prompt: str, model: str) -> str:
+    # =========================
+    # Upload File
+    # =========================
+
+    def upload_file(self, file_path: str):
+        return self.client.files.upload(file=file_path)
+
+    # =========================
+    # Retry Generate
+    # =========================
+
+    def _generate_with_retry(
+        self,
+        model: str,
+        contents
+    ) -> str:
+
         for i, delay in enumerate(self.retry_delays):
             try:
                 response = self.client.models.generate_content(
                     model=model,
-                    contents=prompt,
+                    contents=contents,
                 )
 
                 return response.text
 
             except Exception as e:
-                print(f"Retry {i + 1} | {model} 失敗：{e}")
+                print(f"Retry {i+1} | {model} 失敗：{e}")
 
                 if i == len(self.retry_delays) - 1:
                     raise e
@@ -76,23 +92,38 @@ class LLMClient:
                 sleep_seconds = delay + random.uniform(0, 1.5)
                 time.sleep(sleep_seconds)
 
-    def generate(self, prompt: str) -> str:
+    # =========================
+    # Main Generate
+    # =========================
+
+    def generate(
+        self,
+        contents,
+        model: Optional[str] = None
+    ) -> str:
+
         if not self._is_available():
-            raise Exception("LLM 暫時不可用，請稍後再試")
+            raise Exception("LLM 暫時不可用")
 
         last_error = None
 
-        for model in self.models:
-            try:
-                print(f"使用模型：{model}")
+        models_to_try = [model] if model else self.models
 
-                result = self._generate_with_retry(prompt, model)
+        for current_model in models_to_try:
+            try:
+                print(f"使用模型：{current_model}")
+
+                result = self._generate_with_retry(
+                    model=current_model,
+                    contents=contents,
+                )
 
                 self._on_success()
                 return result
 
             except Exception as e:
-                print(f"模型 {model} 失敗：{e}")
+                print(f"模型 {current_model} 失敗：{e}")
+
                 self._on_failure()
                 last_error = e
 

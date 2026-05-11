@@ -19,14 +19,9 @@ async def analyze_contract(
 
     clauses = split_clauses(ocr_text)
 
-    suspicious_results = check_suspicious_terms(clauses)
+    results = analyze_contract_clauses(clauses, language)
 
-    ai_results = analyze_contract_clauses(clauses, language)
 
-    results = merge_analysis_results(
-        suspicious_results,
-        ai_results
-    )
 
     return {
         "ocr_text": ocr_text,

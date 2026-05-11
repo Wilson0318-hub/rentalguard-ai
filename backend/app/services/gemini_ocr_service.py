@@ -1,17 +1,30 @@
 import tempfile
-from google import genai
+from pathlib import Path
+
 from app.config import GEMINI_API_KEY, GEMINI_MODEL
+from app.services.llm_client import LLMClient
 
-client = genai.Client(api_key=GEMINI_API_KEY)
 
-def extract_text_from_file(file_bytes: bytes, filename: str) -> str:
-    suffix = filename.split(".")[-1]
+llm_client = LLMClient(
+    api_key=GEMINI_API_KEY,
+    models=[
+        GEMINI_MODEL,
+        "gemini-2.5-flash-lite",
+    ],
+)
 
-    with tempfile.NamedTemporaryFile(delete=False, suffix=f".{suffix}") as temp_file:
+
+def extract_text_from_file(
+    file_bytes: bytes,
+    filename: str
+) -> str:
+    suffix = Path(filename).suffix or ".tmp"
+
+    with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as temp_file:
         temp_file.write(file_bytes)
         temp_path = temp_file.name
 
-    uploaded_file = client.files.upload(file=temp_path)
+    uploaded_file = llm_client.upload_file(temp_path)
 
     prompt = """
 你是一個 OCR 文字辨識工具。
@@ -25,9 +38,9 @@ def extract_text_from_file(file_bytes: bytes, filename: str) -> str:
 5. 只輸出 OCR 文字。
 """
 
-    response = client.models.generate_content(
+    response_text = llm_client.generate(
         model=GEMINI_MODEL,
         contents=[uploaded_file, prompt]
     )
 
-    return response.text.strip()
+    return response_text.strip()
