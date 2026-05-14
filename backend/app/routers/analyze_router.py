@@ -20,6 +20,8 @@ async def analyze_contract(
 
     masked_text = mask_pii(ocr_text)
 
+    clauses=split_clauses(masked_text)
+
     results = analyze_contract_clauses(clauses, language)
 
 
