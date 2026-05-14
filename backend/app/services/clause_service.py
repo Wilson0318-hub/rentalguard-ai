@@ -1,42 +1,45 @@
 import re
 
+
 def split_clauses(text: str) -> list[str]:
-    text = text.strip()
-
     text = normalize_text(text)
-    
-    article_alauses = split_by_article(text)
 
-    if len(article_alauses) > 1:
-        return article_alauses
-    
+    article_clauses = split_by_article(text)
+
+    if len(article_clauses) > 1:
+        return article_clauses
+
     return split_by_sentence(text)
 
+
 def normalize_text(text: str) -> str:
+    text = text.strip()
     text = text.replace("\r\n", "\n")
     text = text.replace("\r", "\n")
-    text = re.sub(r"\n{2,}", "\n", text)
+    text = re.sub(r"\n{3,}", "\n\n", text)
     text = re.sub(r"[ \t]+", " ", text)
 
-    return text.strip()
+    return text
+
 
 def split_by_article(text: str) -> list[str]:
-    pattern = r"(第[一二三四五六七八九十百零〇0-9]+條)"
+    pattern = r"(?m)^(第[一二三四五六七八九十百零〇0-9]+條\s*[^\n]*)"
 
-    parts = re.split(pattern, text)
+    matches = list(re.finditer(pattern, text))
 
     clauses = []
 
-    for i in range(1, len(parts), 2):
-        title = parts[i].strip()
-        content = parts[i + 1].strip() if i + 1 < len(parts) else ""
+    for index, match in enumerate(matches):
+        start = match.start()
+        end = matches[index + 1].start() if index + 1 < len(matches) else len(text)
 
-        clause = title + " " + content
+        clause = text[start:end].strip()
 
-        if len(clause) >= 8:
+        if len(clause) >= 10:
             clauses.append(clause)
 
     return clauses
+
 
 def split_by_sentence(text: str) -> list[str]:
     raw_clauses = re.split(r"[。；;\n]+", text)
