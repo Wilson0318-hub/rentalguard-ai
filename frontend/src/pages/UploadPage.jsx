@@ -52,7 +52,7 @@ function UploadPage() {
             </div>
             <div>
               <p className="text-lg font-black tracking-tight text-slate-900">
-                RentalGuard AI
+                G-Lens
               </p>
               <p className="text-xs text-slate-500">Lease Risk Analyzer</p>
             </div>
@@ -81,7 +81,7 @@ function UploadPage() {
           </div>
 
           <h1 className="mt-7 text-5xl font-black leading-tight tracking-tight text-slate-950 md:text-6xl">
-            3 秒看懂租約裡的
+            5 分鐘看懂租約裡的
             <span className="block bg-gradient-to-r from-blue-700 to-cyan-500 bg-clip-text text-transparent">
               隱藏風險
             </span>
@@ -89,7 +89,7 @@ function UploadPage() {
 
           <p className="mt-6 max-w-xl text-lg leading-8 text-slate-600">
             上傳租賃契約，系統會使用 Gemini OCR 讀取文字，
-            並根據 SPACE A 法規資料庫分析違法條款、疑似竄改與不合理內容。
+            並根據 Offical Laws 法規資料庫分析違法條款、疑似竄改與不合理內容。
           </p>
 
           <div className="mt-9 flex flex-col gap-4 sm:flex-row">
